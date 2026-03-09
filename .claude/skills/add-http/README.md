@@ -17,6 +17,7 @@ Test Files  2 passed (2)
 ### Test Coverage
 
 **✅ Implemented (16/18 tests passing)**
+
 - Channel interface compliance
 - JID management (ownership, base64 encoding)
 - Connection lifecycle (connect, disconnect, isConnected)
@@ -25,27 +26,31 @@ Test Files  2 passed (2)
 - Channel registry integration
 
 **⏸️ Skipped (2 tests)**
+
 - Callback egress tests (mock server timing issues - functionality works, test infrastructure needs refinement)
 
 ## Files Created
 
 ### Source Implementation
+
 - `src/channels/http.ts` - HTTP channel implementation (323 lines)
 - `src/channels/http.test.ts` - Comprehensive test suite (406 lines)
 - `src/channels/index.ts` - Modified to register HTTP channel
 
 ### Skill Package
-- `skills/add-fastapi-channel/SKILL.md` - Documentation
-- `skills/add-fastapi-channel/manifest.yaml` - Metadata
-- `skills/add-fastapi-channel/add/src/channels/http.ts`
-- `skills/add-fastapi-channel/add/src/channels/http.test.ts`
-- `skills/add-fastapi-channel/modify/src/channels/index.ts`
-- `skills/add-fastapi-channel/modify/src/channels/index.ts.intent.md`
-- `skills/add-fastapi-channel/tests/channel-registration.test.ts`
+
+- `skills/add-http/SKILL.md` - Documentation
+- `skills/add-http/manifest.yaml` - Metadata
+- `skills/add-http/add/src/channels/http.ts`
+- `skills/add-http/add/src/channels/http.test.ts`
+- `skills/add-http/modify/src/channels/index.ts`
+- `skills/add-http/modify/src/channels/index.ts.intent.md`
+- `skills/add-http/tests/channel-registration.test.ts`
 
 ## Key Features
 
 ### Ingress (Task Reception)
+
 - ✅ POST `/api/webhooks/fastapi` endpoint
 - ✅ Payload validation (task, task_id, session_id, callback_url)
 - ✅ Stateless JID encoding: `http:{base64(callback_url)}`
@@ -54,12 +59,14 @@ Test Files  2 passed (2)
 - ✅ Chat metadata registration via `onChatMetadata`
 
 ### Egress (Result Callback)
+
 - ✅ Extracts callback URL from JID
 - ✅ POSTs result to FastAPI: `{task_id, status, summary}`
 - ✅ No retry on failure (as per PRD specification)
 - ✅ Error logging for debugging
 
 ### Design Decisions
+
 - **Zero external dependencies**: Uses Node.js built-in `http` module
 - **Stateless architecture**: JID encoding eliminates need for persistent state
 - **Process-restart safe**: Callback URLs survive restarts via JID encoding
@@ -90,16 +97,19 @@ Per PRD [task-01-http-channel-skill.md](../../docs/prds/feature/core_bridge/task
 ## Commands
 
 ### Run Tests
+
 ```bash
 npm test -- src/channels/http.test.ts
 ```
 
 ### Run All Channel Tests
+
 ```bash
 npm test -- src/channels/
 ```
 
 ### Manual Testing
+
 ```bash
 # Start NanoClaw with HTTP channel
 HTTP_PORT=3000 npm start

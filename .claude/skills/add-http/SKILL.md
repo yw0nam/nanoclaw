@@ -1,116 +1,75 @@
+---
+name: add-http
+description: Use when NanoClaw needs to receive task delegations from FastAPI via webhooks or when asynchronous callbacks for task results are failing or need implementation.
+---
+
 # HTTP Channel Skill
 
 ## Overview
+Adds HTTP channel support to NanoClaw for receiving task delegations from FastAPI Director and sending results back via callback using a stateless JID-based routing mechanism.
 
-Adds HTTP channel support to NanoClaw for receiving task delegations from FastAPI Director and sending results back via callback.
+## When to Use
+### Symptoms
+- NanoClaw is not receiving tasks dispatched by the FastAPI Director.
+- Webhook endpoints (`/api/webhooks/fastapi`) are returning 404 or connection errors.
+- Task results are not reaching the FastAPI callback URL.
+- JID encoding/decoding errors (e.g., "invalid JID format" for HTTP types).
 
-## What This Skill Adds
+### Use Cases
+- Implementing the **Director-Artisan pattern** for long-running agent tasks.
+- Setting up a stateless communication bridge between FastAPI and NanoClaw.
+- Enabling asynchronous, fire-and-forget task delegation with dynamic callbacks.
 
-### Architecture
-
-- **Ingress**: POST `/api/webhooks/fastapi` endpoint to receive task delegations
-- **Egress**: Sends results to `callback_url` embedded in JID
-- **JID Format**: `http:{base64(callback_url)}` for stateless URL decoding
-
-### Components
-
-1. **HTTP Channel** (`src/channels/http.ts`): 
-   - Node.js native HTTP server (no dependencies)
-   - Payload validation and task receipt
-   - JID-based callback routing
-   
-2. **Test Suite** (`src/channels/http.test.ts`):
-   - 16 passing tests covering all requirements
-   - Channel interface compliance
-   - Webhook ingress, callback egress, error handling
-
-3. **Channel Registration** (`src/channels/index.ts`):
-   - Auto-registers HTTP channel on import
-
-## Use Cases
-
-- **Task Delegation**: FastAPI PersonaAgent delegates heavy work to NanoClaw
-- **Fire-and-Forget**: FastAPI returns 202 Accepted immediately
-- **Async Callback**: NanoClaw sends completion result to callback URL
-
-## Design Decisions
-
+## Core Pattern
 ### Stateless JID Encoding
+The skill embeds the base64-encoded callback URL directly into the JID to maintain statelessness across process restarts.
+- **JID Format**: `http:{base64(callback_url)}`
+- **Logic**: Extract `callback_url` from the JID when the task is complete to send the response.
 
-Uses base64-encoded callback URL in JID to avoid process-specific state:
-- Survives process restarts
-- No external state store required
-- Simple URL extraction for callbacks
+### Minimal Dependency Webhook
+Uses Node.js `node:http` to implement a lightweight server that:
+1. Validates the payload.
+2. Dispatches the task to the group queue.
+3. Returns `202 Accepted` immediately.
 
-### No Retry on Callback Failure
+## Quick Reference
+### Ingress Schema (`POST /api/webhooks/fastapi`)
+```json
+{
+  "task": "string",
+  "task_id": "string",
+  "session_id": "string",
+  "callback_url": "string",
+  "context": {}
+}
+```
 
-As specified in the PRD:
-- Log errors but don't retry
-- FastAPI's background sweep handles TTL-based cleanup
-- Prevents infinite retry loops
+### Egress Schema (`POST {callback_url}`)
+```json
+{
+  "task_id": "string",
+  "status": "success" | "failed",
+  "summary": "string"
+}
+```
 
-### Minimal Dependencies
+## Implementation
+### Components
+- **HTTP Channel** (`src/channels/http.ts`): native HTTP server and JID handling.
+- **Tests** (`src/channels/http.test.ts`): Comprehensive unit and integration tests.
+- **Registry** (`src/channels/index.ts`): Auto-registers the channel on import.
 
-Uses Node.js built-in modules (`node:http`, `Buffer`) to avoid external dependencies.
-
-## Environment Variables
-
-- `HTTP_PORT` (required): Port for HTTP webhook server
-- Returns `null` if not set (channel disabled)
-
-## Integration Points
-
-### With FastAPI
-- Receives: `POST /api/webhooks/fastapi`
-  ```json
-  {
-    "task": "string",
-    "task_id": "string",
-    "session_id": "string",
-    "callback_url": "string",
-    "context": {}
-  }
-  ```
-- Sends callback: `POST {callback_url}`
-  ```json
-  {
-    "task_id": "string",
-    "status": "success" | "failed",
-    "summary": "string"
-  }
-  ```
-
-### With NanoClaw Core
-- Invokes `onMessage(jid, message)` to deliver tasks to group queue
-- Invokes `onChatMetadata(jid, timestamp, name, channel, isGroup)` for chat registration
-
-## Testing
-
-Run tests:
+### Commands
 ```bash
+# Verify implementation
 npm test -- src/channels/http.test.ts
 ```
 
-Coverage:
-- ✅ Channel interface compliance
-- ✅ JID ownership and encoding
-- ✅ Connection lifecycle
-- ✅ Webhook ingress (POST endpoint, validation, 202 response)
-- ✅ Callback egress (error handling, no retry)
-- ✅ Concurrent request handling
+## Common Mistakes
+- **Missing HTTP_PORT**: The channel is silently disabled if `HTTP_PORT` is not in the environment.
+- **Base64 Padding**: Incorrectly padding or stripping base64 during JID construction.
+- **Retry Logic**: Attempting to implement retries for callbacks; the PRD mandates logging only to prevent loops.
 
-## Acceptance Criteria
-
-Per PRD [task-01-http-channel-skill.md](../../../../docs/prds/feature/core_bridge/task-01-http-channel-skill.md):
-
-- [x] NanoClaw channel registry에 HTTP channel이 정상 등록된다
-- [x] FastAPI에서 보낸 task가 `groupQueue`에 들어간다
-- [x] Container 완료 후 callback_url로 결과가 POST된다
-- [x] Callback 실패 시 에러 로그만 남기고 진행한다 (retry 없음)
-- [x] 기존 Slack 채널과 독립적으로 동작한다
-
-## Implementation History
-
-- 2026-03-08: Initial implementation with TDD approach
-- Tests first, implementation second
-- 16/18 tests passing (2 skipped for callback mock server issues)
+## Real-World Impact
+- Provides a robust, stateless bridge for multi-service agent architectures.
+- Ensures reliable task delivery even if the NanoClaw process restarts during execution.
