@@ -1,0 +1,26 @@
+skill: fastapi-channel
+version: 1.0.0
+description: "HTTP channel for FastAPI task delegation with stateless callback routing"
+core_version: 0.1.0
+
+# Files this skill adds
+adds:
+  - src/channels/http.ts
+  - src/channels/http.test.ts
+
+# Code files this skill modifies (three-way merge)
+modifies:
+  - src/channels/index.ts
+
+# Structured operations (no external dependencies needed)
+structured:
+  npm_dependencies: {}  # Uses node:http built-in module only
+  env_additions:
+    - HTTP_PORT
+
+# Skill relationships
+conflicts: []
+depends: []
+
+# Test command
+test: "npm test -- src/channels/http.test.ts"
