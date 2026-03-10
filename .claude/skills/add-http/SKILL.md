@@ -48,7 +48,7 @@ Uses Node.js `node:http` to implement a lightweight server that:
 ```json
 {
   "task_id": "string",
-  "status": "success" | "failed",
+  "status": "done" | "failed",
   "summary": "string"
 }
 ```

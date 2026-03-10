@@ -15,7 +15,7 @@ interface TaskPayload {
 
 interface CallbackPayload {
   task_id: string;
-  status: 'success' | 'failed';
+  status: 'done' | 'failed';
   summary: string;
   error?: string;
 }
@@ -277,7 +277,7 @@ export function createHttpChannel(opts: ChannelOpts): Channel | null {
       
       const payload: CallbackPayload = {
         task_id: taskId,
-        status: 'success',
+        status: 'done',
         summary: text,
       };
 
