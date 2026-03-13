@@ -209,36 +209,6 @@ function buildVolumeMounts(
     mounts.push(...validatedMounts);
   }
 
-  // Knowledge base: read-write for agent notes
-  const kbPath = process.env.KNOWLEDGE_BASE_HOST_PATH;
-  if (kbPath && fs.existsSync(kbPath)) {
-    mounts.push({
-      hostPath: kbPath,
-      containerPath: '/workspace/knowledge_base',
-      readonly: false,
-    });
-  }
-
-  // SSH keys: read-only for git operations
-  const sshPath = process.env.SSH_HOST_PATH ?? path.join(process.env.HOME ?? '/root', '.ssh');
-  if (fs.existsSync(sshPath)) {
-    mounts.push({
-      hostPath: sshPath,
-      containerPath: '/root/.ssh',
-      readonly: true,
-    });
-  }
-
-  // Container scripts (generate_indexes.ts, sync_knowledge.sh)
-  const scriptsPath = path.join(process.cwd(), 'container', 'scripts');
-  if (fs.existsSync(scriptsPath)) {
-    mounts.push({
-      hostPath: scriptsPath,
-      containerPath: '/scripts',
-      readonly: true,
-    });
-  }
-
   return mounts;
 }
 
@@ -266,16 +236,6 @@ function buildContainerArgs(
     args.push('-e', 'ANTHROPIC_API_KEY=placeholder');
   } else {
     args.push('-e', 'CLAUDE_CODE_OAUTH_TOKEN=placeholder');
-  }
-
-  // Knowledge base environment variables
-  const kbPath = process.env.KNOWLEDGE_BASE_HOST_PATH;
-  if (kbPath) {
-    args.push('-e', 'KNOWLEDGE_BASE_PATH=/workspace/knowledge_base');
-    args.push('-e', `GIT_AUTHOR_NAME=${process.env.GIT_AUTHOR_NAME ?? 'DesktopMate'}`);
-    args.push('-e', `GIT_AUTHOR_EMAIL=${process.env.GIT_AUTHOR_EMAIL ?? 'agent@local'}`);
-    args.push('-e', `GIT_COMMITTER_NAME=${process.env.GIT_COMMITTER_NAME ?? 'DesktopMate'}`);
-    args.push('-e', `GIT_COMMITTER_EMAIL=${process.env.GIT_COMMITTER_EMAIL ?? 'agent@local'}`);
   }
 
   // Runtime-specific args for host gateway resolution
