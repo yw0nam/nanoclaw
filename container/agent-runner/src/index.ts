@@ -553,6 +553,23 @@ async function main(): Promise<void> {
     });
     process.exit(1);
   }
+
+  // Post-hook: sync knowledge base after all queries complete.
+  // Only runs when /scripts/sync_knowledge.sh is mounted (knowledge-base-volume skill).
+  const syncScript = '/scripts/sync_knowledge.sh';
+  if (fs.existsSync(syncScript)) {
+    log('Post-hook: syncing knowledge base...');
+    const { execSync } = await import('child_process');
+    try {
+      execSync(`bash ${syncScript} "auto-sync after agent task"`, {
+        stdio: ['ignore', 'inherit', 'inherit'],
+      });
+      log('Knowledge base sync complete');
+    } catch (err) {
+      // Non-fatal: log and continue so the container exits cleanly
+      log(`Knowledge base sync failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
 }
 
 main();
