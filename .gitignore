@@ -37,3 +37,9 @@ groups/global/*
 
 agents-sdk-docs
 .worktrees
+agents-v3/
+.claude/agent-memory
+.claude/memory
+.claude/sessions
+.claude/state
+.claude/settings.json
