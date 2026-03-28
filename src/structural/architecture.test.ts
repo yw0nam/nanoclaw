@@ -36,7 +36,10 @@ describe('TestCodeConventions', () => {
     });
 
     const violators = files.filter((relPath) => {
-      if (KNOWN_CONSOLE_FILES.has(relPath) || KNOWN_CONSOLE_FILES.has(relPath.split('/').pop()!)) {
+      if (
+        KNOWN_CONSOLE_FILES.has(relPath) ||
+        KNOWN_CONSOLE_FILES.has(relPath.split('/').pop()!)
+      ) {
         return false; // known debt — skip
       }
       const src = readFileSync(join(SRC_DIR, relPath), 'utf8');
@@ -62,10 +65,10 @@ describe('TestFileSizeLimits', () => {
   // Known debt: files that already exceed the limit.
   // Each entry should have an associated refactor task.
   const KNOWN_LARGE_FILES = new Set<string>([
-    'container-runner.ts',  // 736 lines — needs splitting
-    'db.ts',                // 719 lines — needs splitting
-    'ipc.ts',               // 464 lines — needs splitting
-    'mount-security.ts',    // 419 lines — needs splitting
+    'container-runner.ts', // 736 lines — needs splitting
+    'db.ts', // 719 lines — needs splitting
+    'ipc.ts', // 464 lines — needs splitting
+    'mount-security.ts', // 419 lines — needs splitting
   ]);
 
   it('T3: no file exceeds its LOC limit', () => {
@@ -82,7 +85,10 @@ describe('TestFileSizeLimits', () => {
         continue; // known debt
       }
 
-      const limit = FILE_SIZE_LIMITS[fileName] ?? FILE_SIZE_LIMITS[relPath] ?? DEFAULT_LOC_LIMIT;
+      const limit =
+        FILE_SIZE_LIMITS[fileName] ??
+        FILE_SIZE_LIMITS[relPath] ??
+        DEFAULT_LOC_LIMIT;
       const src = readFileSync(join(SRC_DIR, relPath), 'utf8');
       const lineCount = src.split('\n').length;
 
@@ -102,11 +108,17 @@ describe('TestFileSizeLimits', () => {
 describe('TestChannelSelfRegistration', () => {
   it('T1-1: every channel file calls registerChannel()', () => {
     const files = readdirSync(CHANNELS_DIR).filter(
-      (f) => f.endsWith('.ts') && !['registry.ts', 'index.ts'].includes(f) && !f.endsWith('.test.ts'),
+      (f) =>
+        f.endsWith('.ts') &&
+        !['registry.ts', 'index.ts'].includes(f) &&
+        !f.endsWith('.test.ts'),
     );
 
     const violators = files.filter(
-      (f) => !readFileSync(join(CHANNELS_DIR, f), 'utf8').includes('registerChannel('),
+      (f) =>
+        !readFileSync(join(CHANNELS_DIR, f), 'utf8').includes(
+          'registerChannel(',
+        ),
     );
 
     expect(violators).toEqual([]);
@@ -114,14 +126,20 @@ describe('TestChannelSelfRegistration', () => {
 
   it('T1-2: channels/index.ts imports every channel file', () => {
     const channelFiles = readdirSync(CHANNELS_DIR).filter(
-      (f) => f.endsWith('.ts') && !['registry.ts', 'index.ts'].includes(f) && !f.endsWith('.test.ts'),
+      (f) =>
+        f.endsWith('.ts') &&
+        !['registry.ts', 'index.ts'].includes(f) &&
+        !f.endsWith('.test.ts'),
     );
 
     const indexSrc = readFileSync(join(CHANNELS_DIR, 'index.ts'), 'utf8');
 
     const missing = channelFiles.filter((f) => {
       const stem = f.replace('.ts', '');
-      return !indexSrc.includes(`'./${stem}.js'`) && !indexSrc.includes(`'./${stem}'`);
+      return (
+        !indexSrc.includes(`'./${stem}.js'`) &&
+        !indexSrc.includes(`'./${stem}'`)
+      );
     });
 
     expect(missing).toEqual([]);
